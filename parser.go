@@ -12,9 +12,21 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-const (
-	TLDCode = "de"
-	MaxPage = 1
+var (
+	// TLDCodes maps country TLDs to max pages to download
+	TLDCodes = map[string]int{
+		"de": 579,
+		"be": 293,
+		"it": 385,
+		"pl": 163,
+		"cz": 217,
+		"hu": 225,
+		"fr": 295,
+		"es": 479,
+		"nl": 286,
+		"gb": 552,
+
+	}
 )
 
 // Trial is a trial result from the eu-ctr
@@ -33,10 +45,10 @@ type Trial struct {
 	medicalCondition      string
 }
 
-func getPage(page int) ([]Trial, error) {
+func getPage(page int, tldCode string) ([]Trial, error) {
 	fmt.Printf("downloading page %d\n", page)
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-	res, err := http.Get(fmt.Sprintf("https://www.clinicaltrialsregister.eu/ctr-search/search?query=&country=%s&page=%d", TLDCode, page))
+	res, err := http.Get(fmt.Sprintf("https://www.clinicaltrialsregister.eu/ctr-search/search?query=&country=%s&page=%d", tldCode, page))
 	if err != nil {
 		return nil, err
 	}
@@ -91,11 +103,18 @@ func getPage(page int) ([]Trial, error) {
 	return trials, nil
 }
 
-func main() {
+func main () {
+	for tld, maxPage := range TLDCodes {
+		fmt.Printf("downloading EU-CTR trials for %s", tld)
+		loadTLDs(tld, maxPage)
+	}
+}
+
+func loadTLDs(code string, maxPage int) {
 	trials := []Trial{}
 
-	for counter := 0; counter < MaxPage; counter++ {
-		partials, err := getPage(counter)
+	for counter := 0; counter < maxPage; counter++ {
+		partials, err := getPage(counter, code)
 		if err != nil {
 			log.Fatalf("failed to get page %d: %v", counter, err)
 			break
@@ -103,7 +122,7 @@ func main() {
 		trials = append(trials, partials...)
 	}
 
-	file, err := os.Create("eu-ctr.csv")
+	file, err := os.Create(fmt.Sprintf("eu-ctr-%s.csv", code))
 	if err != nil {
 		log.Fatalf("failed to create output file")
 	}
