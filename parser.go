@@ -46,7 +46,7 @@ type Trial struct {
 }
 
 func getPage(page int, tldCode string) ([]Trial, error) {
-	fmt.Printf("downloading page %d\n", page)
+	fmt.Printf("downloading TLD %s page %d\n", tldCode, page)
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	res, err := http.Get(fmt.Sprintf("https://www.clinicaltrialsregister.eu/ctr-search/search?query=&country=%s&page=%d", tldCode, page))
 	if err != nil {
@@ -105,7 +105,6 @@ func getPage(page int, tldCode string) ([]Trial, error) {
 
 func main () {
 	for tld, maxPage := range TLDCodes {
-		fmt.Printf("downloading EU-CTR trials for %s", tld)
 		loadTLDs(tld, maxPage)
 	}
 }
